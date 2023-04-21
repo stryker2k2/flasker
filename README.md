@@ -3,6 +3,12 @@
 An online blog template created using Flask from YouTube Tutorial series called "Create A Flask Blog - Flask Friday"
 https://youtu.be/0Qxtt4veJIc
 
+### Dependencies
+- python3
+- grip
+- flask
+- flask-wtf
+
 ### Setup
 - python3 -m venv virt
 - source virt/bin/activate
@@ -22,4 +28,3 @@ https://youtu.be/0Qxtt4veJIc
 ### Other Commands
 - echo $FLASK_ENV
 - unset FLASK_ENV
-
