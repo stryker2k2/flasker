@@ -8,9 +8,15 @@ import uuid
 
 # Create a Flask Instance
 app = Flask(__name__)
-# Add Database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+
+# SQLite3 Database
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+# app.app_context().push()
+
+# MySQL Database (mysql://<username>:<password>@<serverip>/<db_name>)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://db-admin:password@localhost/our_users'
 app.app_context().push()
+
 # Create a CSRF Secret Key
 app.config['SECRET_KEY'] = str(uuid.uuid1())
 # Initialize Database

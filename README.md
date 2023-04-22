@@ -9,6 +9,9 @@ https://youtu.be/0Qxtt4veJIc
 - (pip) flask-wtf
 - (pip) flask-sqlalchemy
 - (apt) mysql-server
+- (pip) mysql-connector-python
+- (pip) pymysql
+- (pip) cryptography
 
 ### Setup
 - python3 -m venv virt
