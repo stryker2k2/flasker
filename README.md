@@ -1,20 +1,20 @@
 # Flasker
-
 An online blog template created using Flask from YouTube Tutorial series called "Create A Flask Blog - Flask Friday"
 https://youtu.be/0Qxtt4veJIc
 
 ### Dependencies
-- python3
-- grip
-- flask
-- flask-wtf
+- (apt) python3 
+- (apt) grip
+- (pip) flask
+- (pip) flask-wtf
+- (pip) flask-sqlalchemy
+- (apt) mysql-server
 
 ### Setup
 - python3 -m venv virt
 - source virt/bin/activate
 - deactivate (optional)
-- pip install grip (view README.md locally)
-- pip install flask
+- pip install <dependencies>
 - pip freeze (to view install python modules)
 - export FLASK_DEBUG=True
 - export FLASK_APP=hello.py
@@ -22,7 +22,7 @@ https://youtu.be/0Qxtt4veJIc
 
 ### Daily Use
 - source virt/bin/activate
-- flask run 
+- flask run
 - grip (view README.md locally)
 
 ### Other Commands
