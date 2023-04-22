@@ -12,6 +12,7 @@ https://youtu.be/0Qxtt4veJIc
 - (pip) mysql-connector-python
 - (pip) pymysql
 - (pip) cryptography
+- (pip) Flask-Migrate
 
 ### Setup
 - python3 -m venv virt

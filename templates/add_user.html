@@ -14,10 +14,15 @@
     {% for our_user in our_users %}
     <tr>
         <td>
-        {{ our_user.id }} - {{ our_user.name }} - {{ our_user.email }}
-        {% endfor %}
+            {{ our_user.id }}. 
+            <a href="{{ url_for('update', id= our_user.id) }}">
+                {{ our_user.name }}</a> 
+            - {{ our_user.email }}
+            - {{ our_user.fav_color }} - 
+            <a href="{{ url_for('delete', id= our_user.id) }}">Delete</a>
         </td>
     </tr>
+    {% endfor %}
 </table>
 
 {% else %}
@@ -33,6 +38,10 @@
             {{ form.email.label(class="form-label") }}
             {{ form.email(class="form-control") }}
             <br/>
+            {{ form.hidden_tag() }}
+            {{ form.fav_color.label(class="form-label") }}
+            {{ form.fav_color(class="form-control") }}
+            <br/>
             {{ form.submit(class="btn btn-secondary") }}
         </form>
     </div>
@@ -42,10 +51,15 @@
         {% for our_user in our_users %}
         <tr>
             <td>
-            {{ our_user.id }} - {{ our_user.name }} - {{ our_user.email }}
-            {% endfor %}
+                {{ our_user.id }}. 
+                <a href="{{ url_for('update', id= our_user.id) }}">
+                    {{ our_user.name }}</a> 
+                - {{ our_user.email }}
+                - {{ our_user.fav_color }} - 
+                <a href="{{ url_for('delete', id= our_user.id) }}">Delete</a>
             </td>
         </tr>
+        {% endfor %}
     </table>
 
 {% endif %}

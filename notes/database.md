@@ -2,12 +2,12 @@
 
 ## sqlite3
 
-### hello.py
+hello.py
 ```python
 app.app_context().push()
 ```
 
-### terminal
+terminal
 ```bash
 (virt)$ python3
 >>> from hello import app
@@ -22,7 +22,7 @@ hello.py
 app.app_context().push()
 ```
 
-### terminal
+terminal
 ```bash
 # Install MySQL Server
 (virt)$ sudo apt-get install mysql-server
@@ -48,4 +48,10 @@ mysql> quit;
 
 # Login as MySQL User
 (virt)$ mysql -u db-user -p
+
+# Migration
+(virt)$ pip install Flask-Migrate
+(virt)$ flask db init
+(virt)$ flask db migrate -m 'Initial Migration'
+(virt)$ flask db upgrade
 ```
