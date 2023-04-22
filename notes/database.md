@@ -2,12 +2,12 @@
 
 ## sqlite3
 
-hello.py
+### hello.py
 ```python
 app.app_context().push()
 ```
 
-terminal
+### terminal
 ```bash
 (virt)$ python3
 >>> from hello import app
@@ -17,6 +17,12 @@ terminal
 
 
 ## mysql
+hello.py
+```python
+app.app_context().push()
+```
+
+### terminal
 ```bash
 # Install MySQL Server
 (virt)$ sudo apt-get install mysql-server
@@ -27,7 +33,7 @@ terminal
 mysql> CREATE USER 'db-admin'@'localhost' IDENTIFIED BY 'password';
 mysql> GRANT ALL PRIVILEGES ON *.* TO 'db-admin'@'localhost';
 mysql> FLUSH PRIVILEGES;
-mysql> quit
+mysql> quit;
 (virt)$ sudo systemctl restart mysql
 (virt)$ python3 create_db.py
 
