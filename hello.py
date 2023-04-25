@@ -2,9 +2,10 @@ from flask import Flask, render_template, flash, request
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError
 from wtforms.validators import DataRequired, EqualTo, Length
+from wtforms.widgets import TextArea
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from datetime import datetime
+from datetime import datetime, date
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 
@@ -26,7 +27,8 @@ app.config['SECRET_KEY'] = str(uuid.uuid1())
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-# Create Model
+
+# User Model
 class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
@@ -52,6 +54,16 @@ class Users(db.Model):
     def __repr__(self):
         return '<Name %r>' % self.name
 
+# Blog Post Model
+class Posts(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255))
+    content = db.Column(db.Text)
+    author = db.Column(db.String(255))
+    date_posted = db.Column(db.DateTime, default=datetime.utcnow)
+    slug = db.Column(db.String(255))
+
+
 ## Form Classes
 # https://wtforms.readthedocs.io/en/3.0.x/fields/
 class UserForm(FlaskForm):
@@ -65,6 +77,19 @@ class UserForm(FlaskForm):
 class NamerForm(FlaskForm):
     name = StringField("What's your name?", validators=[DataRequired()])
     submit = SubmitField("Submit")
+
+class PasswordForm(FlaskForm):
+    email = StringField("What's your email?", validators=[DataRequired()])
+    password_hash = PasswordField("What's your password?", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+class PostForm(FlaskForm):
+    title = StringField("Title", validators=[DataRequired()])
+    content = StringField("Content", validators=[DataRequired()], widget=TextArea())
+    author = StringField("Author", validators=[DataRequired()])
+    slug = StringField("Slug", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
 
 # Create a Route Decorator
 @app.route('/')
@@ -131,6 +156,32 @@ def add_user():
         name = name,
         our_users = our_users)
 
+# Password Test Page
+@app.route('/test_pw', methods=['GET', 'POST'])
+def test_pw():
+    email = None
+    password = None
+    pw_to_check = None
+    passed = None
+    form = PasswordForm()
+    # Validate Form
+    # https://flask-wtf.readthedocs.io/en/0.15.x/form/
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password_hash.data
+        form.email.data = ''
+        form.password_hash.data = ''
+        # Lookup user by email address
+        pw_to_check = Users.query.filter_by(email=email).first()
+        # Check Hashed Password
+        passed = check_password_hash(pw_to_check.password_hash, password)
+    return render_template('test_pw.html',
+        email = email,
+        password = password,
+        pw_to_check = pw_to_check,
+        passed = passed,
+        form = form)
+
 # Update Database Record
 @app.route('/update/<int:id>', methods=['GET', 'POST'])
 def update(id):
@@ -181,6 +232,33 @@ def delete(id):
             form = form, 
             name = name,
             our_users = our_users)
+
+# JSON Page
+@app.route('/date')
+def get_current_date():
+    return {"Date": date.today()}
+
+# Post Page
+@app.route('/add-post', methods=['GET', 'POST'])
+def add_post():
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Posts(title=form.title.data, 
+            content=form.content.data, 
+            author=form.author.data, 
+            slug=form.slug.data)
+        form.title.data = ''
+        form.content.data = ''
+        form.author.data = ''
+        form.slug.data = ''
+
+        # Add Post data to Database
+        db.session.add(post)
+        db.session.commit()
+        flash("Blog Post submitted successfully!")
+
+    # Redirect to webpage
+    return render_template('add_post.html', form=form)
 
 
 
