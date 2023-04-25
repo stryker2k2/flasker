@@ -49,7 +49,7 @@ mysql> quit;
 # Login as MySQL User
 (virt)$ mysql -u db-user -p
 
-# Migration
+# Migration (add new column to Database)
 (virt)$ pip install Flask-Migrate
 (virt)$ flask db init
 (virt)$ flask db migrate -m 'Initial Migration'

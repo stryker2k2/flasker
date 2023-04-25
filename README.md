@@ -32,3 +32,4 @@ https://youtu.be/0Qxtt4veJIc
 ### Other Commands
 - echo $FLASK_ENV
 - unset FLASK_ENV
+- flask shell
