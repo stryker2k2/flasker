@@ -103,6 +103,17 @@ def index():
         stuff = bold_stuff,
         fav_pizza = fav_pizza)
 
+# Blog Home Page
+@app.route('/posts')
+def posts():
+    # Grab all posts from database
+    posts = Posts.query.order_by(Posts.date_posted)
+    return render_template('posts.html', posts = posts)
+
+
+
+
+
 
 # localhost:5000/user/john
 @app.route('/user/<name>')
@@ -259,6 +270,12 @@ def add_post():
 
     # Redirect to webpage
     return render_template('add_post.html', form=form)
+
+# View Individual Post Page
+@app.route('/posts/<int:id>')
+def post(id):
+    post = Posts.query.get_or_404(id)
+    return render_template('post.html', post = post)
 
 
 
