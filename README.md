@@ -13,6 +13,7 @@ https://youtu.be/0Qxtt4veJIc
 - (pip) pymysql
 - (pip) cryptography
 - (pip) Flask-Migrate
+- (pip) flask_login
 
 ### Setup
 - python3 -m venv virt

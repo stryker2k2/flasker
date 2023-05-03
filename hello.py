@@ -7,6 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime, date
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 import uuid
 
 # Create a Flask Instance
@@ -27,10 +28,19 @@ app.config['SECRET_KEY'] = str(uuid.uuid1())
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+# Flask Login Setup
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Users.query.get(int(user_id))
 
 # User Model
-class Users(db.Model):
+class Users(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(20), nullable=False, unique=True)
     name = db.Column(db.String(200), nullable=False)
     email = db.Column(db.String(120), nullable=False, unique=True)
     fav_color = db.Column(db.String(120))
@@ -68,6 +78,7 @@ class Posts(db.Model):
 # https://wtforms.readthedocs.io/en/3.0.x/fields/
 class UserForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired()])
+    username = StringField("Username", validators=[DataRequired()])
     email = StringField("Email", validators=[DataRequired()])
     fav_color = StringField("Favorite Color")
     submit = SubmitField("Submit")
@@ -90,6 +101,11 @@ class PostForm(FlaskForm):
     slug = StringField("Slug", validators=[DataRequired()])
     submit = SubmitField("Submit")
 
+class LoginForm(FlaskForm):
+    username = StringField("Username", validators=[DataRequired()])
+    password = PasswordField("Password", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
 
 # Create a Route Decorator
 @app.route('/')
@@ -102,6 +118,39 @@ def index():
         user_name = first_name,
         stuff = bold_stuff,
         fav_pizza = fav_pizza)
+
+# Login Page Route
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = Users.query.filter_by(username = form.username.data).first()
+        if user:
+            # Check Password Hash
+            if check_password_hash(user.password_hash, form.password.data):
+                login_user(user)
+                flash('Login Successful')
+                return redirect(url_for('dashboard'))
+            else:
+                flash('Wrong Password')
+        else:
+            flash('Invalid Username')
+    return render_template('login.html', form = form)
+
+# Dashboard Page Route
+@app.route('/dashboard', methods=['GET', 'POST'])
+@login_required
+def dashboard():
+    return render_template('dashboard.html')
+
+# Logout Page Route
+@app.route('/logout', methods=['GET', 'POST'])
+@login_required
+def logout():
+    logout_user()
+    flash('Succesfully Logged Out')
+    return redirect(url_for('login'))
+
 
 # Blog Home Page
 @app.route('/posts')
@@ -145,14 +194,16 @@ def add_user():
         if name is None:
             # Hash the Password
             hashed_pw = generate_password_hash(form.password_hash.data, "sha256")
-            user = Users(name=form.name.data, 
-                email=form.email.data, 
+            user = Users(name = form.name.data,
+                username = form.username.data,
+                email = form.email.data, 
                 fav_color = form.fav_color.data,
                 password_hash = hashed_pw)
             db.session.add(user)
             db.session.commit()
         name = form.name.data
         form.name.data = ''
+        form.username.data = ''
         form.email.data = ''
         form.fav_color.data = ''
         form.password_hash.data = ''
