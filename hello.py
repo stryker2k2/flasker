@@ -45,7 +45,6 @@ class Users(db.Model, UserMixin):
     email = db.Column(db.String(120), nullable=False, unique=True)
     fav_color = db.Column(db.String(120))
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
-    # Password Stuff
     password_hash = db.Column(db.String(128))
 
     @property
