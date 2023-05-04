@@ -5,7 +5,7 @@ from flask_migrate import Migrate
 from datetime import datetime, date
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
-from webforms import LoginForm, PostForm, UserForm, PasswordForm, NamerForm
+from webforms import LoginForm, PostForm, UserForm, PasswordForm, NamerForm, SearchForm
 import uuid
 
 # Create a Flask Instance
@@ -305,11 +305,39 @@ def edit_post(id):
         db.session.commit()
         flash("Post was updated successfully")
         return redirect(url_for('post', id=post.id))
-    form.title.data = post.title
-    # form.author.data = post.author
-    form.slug.data = post.slug
-    form.content.data = post.content
-    return render_template('edit_post.html', form=form)
+    if current_user.id == post.poster_id:
+        form.title.data = post.title
+        # form.author.data = post.author
+        form.slug.data = post.slug
+        form.content.data = post.content
+        return render_template('edit_post.html', form=form)
+    else:
+        flash("You are not authorized to edit that post")
+        return redirect(url_for('posts', posts=posts))
+
+
+# Pass params/args to base.html then to navbar
+@app.context_processor
+def base():
+    form = SearchForm()
+    return dict(form=form)
+
+
+# Search Route
+@app.route('/search', methods=['POST'])
+def search():
+    form = SearchForm()
+    posts = Posts.query
+    if form.validate_on_submit():
+        # Get data from submitted form
+        post.searched = form.searched.data
+        # Query the database
+        posts = posts.filter(Posts.content.like('%' + post.searched + '%'))
+        posts = posts.order_by(Posts.title).all()
+        return render_template('search.html', 
+            form=form,
+            searched=post.searched,
+            posts=posts)
 
 
 # Delete Post
@@ -318,7 +346,7 @@ def edit_post(id):
 def delete_post(id):
     post_to_delete = Posts.query.get_or_404(id)
     # id = current_user.id
-    if current_user.id == post_to_delete.poster.id:
+    if current_user.id == post_to_delete.poster_id:
         try:
             db.session.delete(post_to_delete)
             db.session.commit()
