@@ -140,7 +140,30 @@ def login():
 @app.route('/dashboard', methods=['GET', 'POST'])
 @login_required
 def dashboard():
-    return render_template('dashboard.html')
+    form = UserForm()
+    id = current_user.id
+    name_to_update = Users.query.get_or_404(id)
+    if request.method == 'POST':
+        name_to_update.name = request.form['name']
+        name_to_update.email = request.form['email']
+        name_to_update.fav_color = request.form['fav_color']
+        name_to_update.username = request.form['username']
+        try:
+            db.session.commit()
+            flash("User Updated Successfully")
+            return render_template('dashboard.html',
+                form = form,
+                name_to_update = name_to_update)
+        except:
+            flash("Database Error!")
+            return render_template('dashboard.html',
+                form = form,
+                name_to_update = name_to_update)
+    else:
+        return render_template('dashboard.html',
+                form = form,
+                name_to_update = name_to_update,
+                id = id)
 
 # Logout Page Route
 @app.route('/logout', methods=['GET', 'POST'])
@@ -248,6 +271,7 @@ def update(id):
         name_to_update.name = request.form['name']
         name_to_update.email = request.form['email']
         name_to_update.fav_color = request.form['fav_color']
+        name_to_update.username = request.form['username']
         try:
             db.session.commit()
             flash("User Updated Successfully")
