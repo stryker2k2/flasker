@@ -1,11 +1,13 @@
 from flask import Flask, render_template, flash, request, redirect, url_for
+from flask_wtf import FlaskForm
+from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError
+from wtforms.validators import DataRequired, EqualTo, Length
 from wtforms.widgets import TextArea
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime, date
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
-from webforms import LoginForm, PostForm, UserForm, PasswordForm, NamerForm
 import uuid
 
 # Create a Flask Instance
@@ -35,8 +37,76 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return Users.query.get(int(user_id))
 
-## Routes ##
-# Root Route
+# User Model
+class Users(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(20), nullable=False, unique=True)
+    name = db.Column(db.String(200), nullable=False)
+    email = db.Column(db.String(120), nullable=False, unique=True)
+    fav_color = db.Column(db.String(120))
+    date_added = db.Column(db.DateTime, default=datetime.utcnow)
+    password_hash = db.Column(db.String(128))
+
+    @property
+    def password(self):
+        raise AttributeError('password is not a readable attribute')
+    
+    @password.setter
+    def password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def verify_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+
+    # Create a String
+    def __repr__(self):
+        return '<Name %r>' % self.name
+
+# Blog Post Model
+class Posts(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255))
+    content = db.Column(db.Text)
+    author = db.Column(db.String(255))
+    date_posted = db.Column(db.DateTime, default=datetime.utcnow)
+    slug = db.Column(db.String(255))
+
+
+## Form Classes
+# https://wtforms.readthedocs.io/en/3.0.x/fields/
+class UserForm(FlaskForm):
+    name = StringField("Name", validators=[DataRequired()])
+    username = StringField("Username", validators=[DataRequired()])
+    email = StringField("Email", validators=[DataRequired()])
+    fav_color = StringField("Favorite Color")
+    submit = SubmitField("Submit")
+    password_hash = PasswordField("Password", validators=[DataRequired(), EqualTo("password_hash2", message = "Passwords Must Match!")])
+    password_hash2 = PasswordField("Confirm Password", validators=[DataRequired()])
+
+class NamerForm(FlaskForm):
+    name = StringField("What's your name?", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+class PasswordForm(FlaskForm):
+    email = StringField("What's your email?", validators=[DataRequired()])
+    password_hash = PasswordField("What's your password?", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+class PostForm(FlaskForm):
+    title = StringField("Title", validators=[DataRequired()])
+    content = StringField("Content", validators=[DataRequired()], widget=TextArea())
+    author = StringField("Author", validators=[DataRequired()])
+    slug = StringField("Slug", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+class LoginForm(FlaskForm):
+    username = StringField("Username", validators=[DataRequired()])
+    password = PasswordField("Password", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+
+# Create a Route Decorator
 @app.route('/')
 def index():
     first_name = 'John'
@@ -95,7 +165,6 @@ def dashboard():
                 name_to_update = name_to_update,
                 id = id)
 
-
 # Logout Page Route
 @app.route('/logout', methods=['GET', 'POST'])
 @login_required
@@ -135,7 +204,6 @@ def name():
         name = name, 
         form = form)
 
-
 # Add User Page
 @app.route('/user/add', methods=['GET', 'POST'])
 def add_user():
@@ -168,7 +236,6 @@ def add_user():
         name = name,
         our_users = our_users)
 
-
 # Password Test Page
 @app.route('/test_pw', methods=['GET', 'POST'])
 def test_pw():
@@ -195,10 +262,8 @@ def test_pw():
         passed = passed,
         form = form)
 
-
 # Update Database Record
 @app.route('/update/<int:id>', methods=['GET', 'POST'])
-@login_required
 def update(id):
     form = UserForm()
     name_to_update = Users.query.get_or_404(id)
@@ -223,7 +288,6 @@ def update(id):
                 form = form,
                 name_to_update = name_to_update,
                 id = id)
-
 
 # Delete Record from Database
 @app.route('/delete/<int:id>')
@@ -250,12 +314,10 @@ def delete(id):
             name = name,
             our_users = our_users)
 
-
 # JSON Page
 @app.route('/date')
 def get_current_date():
     return {"Date": date.today()}
-
 
 # Post Page
 @app.route('/add-post', methods=['GET', 'POST'])
@@ -263,14 +325,13 @@ def get_current_date():
 def add_post():
     form = PostForm()
     if form.validate_on_submit():
-        poster = current_user.id
         post = Posts(title=form.title.data, 
-            content=form.content.data,
-            poster_id=poster,
+            content=form.content.data, 
+            author=form.author.data, 
             slug=form.slug.data)
         form.title.data = ''
         form.content.data = ''
-        # form.author.data = ''
+        form.author.data = ''
         form.slug.data = ''
 
         # Add Post data to Database
@@ -280,7 +341,6 @@ def add_post():
 
     # Redirect to webpage
     return render_template('add_post.html', form=form)
-
 
 # View Individual Post Page
 @app.route('/posts/<int:id>')
@@ -297,7 +357,7 @@ def edit_post(id):
     form = PostForm()
     if form.validate_on_submit():
         post.title = form.title.data
-        # post.author = form.author.data
+        post.author = form.author.data
         post.slug = form.slug.data
         post.content = form.content.data
         #Update Database
@@ -306,7 +366,7 @@ def edit_post(id):
         flash("Post was updated successfully")
         return redirect(url_for('post', id=post.id))
     form.title.data = post.title
-    # form.author.data = post.author
+    form.author.data = post.author
     form.slug.data = post.slug
     form.content.data = post.content
     return render_template('edit_post.html', form=form)
@@ -314,31 +374,24 @@ def edit_post(id):
 
 # Delete Post
 @app.route('/posts/delete/<int:id>')
-@login_required
 def delete_post(id):
     post_to_delete = Posts.query.get_or_404(id)
-    # id = current_user.id
-    if current_user.id == post_to_delete.poster.id:
-        try:
-            db.session.delete(post_to_delete)
-            db.session.commit()
-            flash('Post deleted successfully!')
-            # Grab all posts from database and display
-            posts = Posts.query.order_by(Posts.date_posted)
-            return render_template('posts.html', posts = posts)
-        except:
-            flash('There was an issue deleting that post')
-            # Grab all posts from database and display
-            posts = Posts.query.order_by(Posts.date_posted)
-            return render_template('posts.html', posts = posts)
-    else:
-        flash('You are not authorized to delete that post')
-        # Grab all posts from database and display
+    try:
+        db.session.delete(post_to_delete)
+        db.session.commit()
+        flash('Post deleted successfully!')
+        # Grab all posts from database
+        posts = Posts.query.order_by(Posts.date_posted)
+        return render_template('posts.html', posts = posts)
+    except:
+        flash('There was an issue deleting that post')
+        # Grab all posts from database
         posts = Posts.query.order_by(Posts.date_posted)
         return render_template('posts.html', posts = posts)
 
 
-## Custom Error Page(s) ##
+
+## Custom Error Page(s)
 # Invalid URL
 @app.errorhandler(404)
 def page_not_found(e):
@@ -349,45 +402,3 @@ def page_not_found(e):
 @app.errorhandler(500)
 def page_not_found(e):
     return render_template('500.html'), 500
-
-
-## Database Models ##
-# Blog Post Model
-class Posts(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(255))
-    content = db.Column(db.Text)
-    # author = db.Column(db.String(255))
-    date_posted = db.Column(db.DateTime, default=datetime.utcnow)
-    slug = db.Column(db.String(255))
-    # Foreign Key to link Users (primary key: user,id)
-    poster_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-
-
-# User Model
-class Users(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(20), nullable=False, unique=True)
-    name = db.Column(db.String(200), nullable=False)
-    email = db.Column(db.String(120), nullable=False, unique=True)
-    fav_color = db.Column(db.String(120))
-    date_added = db.Column(db.DateTime, default=datetime.utcnow)
-    password_hash = db.Column(db.String(128))
-    # User can have many posts - need database relationship
-    posts = db.relationship('Posts', backref='poster')
-
-    @property
-    def password(self):
-        raise AttributeError('password is not a readable attribute')
-    
-    @password.setter
-    def password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def verify_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
-
-    # Create a String
-    def __repr__(self):
-        return '<Name %r>' % self.name
