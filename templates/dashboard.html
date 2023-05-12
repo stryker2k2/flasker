@@ -24,6 +24,7 @@
                         <strong>User Id:</strong> {{ current_user.id }}<br/>
                         <strong>Email: </strong> {{ current_user.email }}<br/>
                         <strong>Favorite Color: </strong> {{ current_user.fav_color }}<br/>
+                        <strong>About Author: </strong> {{ current_user.about_author }}<br/>
                         <strong>Date Joined: </strong> {{ current_user.date_added }}<br/></p>
                         <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-sm">Logout</a>
                         <a href="{{ url_for('update', id=current_user.id) }}" class="btn btn-secondary btn-sm">Update</a>
@@ -34,7 +35,6 @@
                     </div>
                 </div>
             </div>
-        </p>
     </div>
 </div>
 <br/><br/>
@@ -57,6 +57,9 @@
             <br/>
             {{ form.fav_color.label(class="form-label") }}
             {{ form.fav_color(class="form-control", value=name_to_update.fav_color) }}
+            <br/>
+            {{ form.about_author.label(class="form-label") }}
+            <textarea name="about_author" class="form-control">{{ name_to_update.about_author }}</textarea>
             <br/>
             {{ form.submit(class="btn btn-secondary btn-sm") }}
         </form>

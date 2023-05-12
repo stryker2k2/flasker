@@ -17,6 +17,9 @@
         <small>By: {{ post.poster.name }} ({{ post.poster.email }})<br/>
         {{ post.date_posted }}</small><br/><br/>
         {{ post.content|safe }}<br/>
+        {% if post.poster.about_author %}
+            {{ post.poster.about_author }}<br/>
+        {% endif %}
         <br/>
         <a href=" {{ url_for('post', id=post.id) }} " class="btn btn-outline-secondary btn-sm">View Post</a>
         {% if post.poster_id == current_user.id %}
