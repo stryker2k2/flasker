@@ -14,6 +14,7 @@ https://youtu.be/0Qxtt4veJIc
 - (pip) cryptography
 - (pip) Flask-Migrate
 - (pip) flask_login
+- (pip) flask-ckeditor
 
 ### Setup
 - python3 -m venv virt
@@ -27,10 +28,12 @@ https://youtu.be/0Qxtt4veJIc
 
 ### Daily Use
 - source virt/bin/activate
+- export FLASK_DEBUG=True
+- export FLASK_APP=hello.py
 - flask run
-- grip (view README.md locally)
 
 ### Other Commands
 - echo $FLASK_ENV
 - unset FLASK_ENV
 - flask shell
+- grip (view README.md locally)

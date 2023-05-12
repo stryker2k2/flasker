@@ -6,10 +6,15 @@ from datetime import datetime, date
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from webforms import LoginForm, PostForm, UserForm, PasswordForm, NamerForm, SearchForm
+from flask_ckeditor import CKEditor
+
 import uuid
 
 # Create a Flask Instance
 app = Flask(__name__)
+
+# Add CKEditor
+ckeditor = CKEditor(app)
 
 # SQLite3 Database
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
@@ -95,6 +100,17 @@ def dashboard():
                 name_to_update = name_to_update,
                 id = id)
 
+
+# Admin Route
+@app.route('/admin')
+@login_required
+def admin():
+    id = current_user.id
+    if id == 16:
+        return render_template('admin.html')
+    else:
+        flash('You must be an administrator to access this page')
+        return redirect(url_for('dashboard'))
 
 # Logout Page Route
 @app.route('/logout', methods=['GET', 'POST'])

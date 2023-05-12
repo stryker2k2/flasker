@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{{ ckeditor.load() }}
 
 {% block content %}
 {% for message in get_flashed_messages() %}
@@ -10,7 +11,7 @@
 
 {% if current_user.is_authenticated %}
 
-<h1>Add Blog Post</h1>
+<h2>Add Blog Post</h2>
     <br/>
     <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
         <form method="POST">
@@ -26,6 +27,8 @@
             <br/>
             {{ form.submit(class="btn btn-secondary") }}
         </form>
+        {{ ckeditor.load() }}
+        {{ ckeditor.config(name='content') }}
     </div>
 
 {% else %}

@@ -14,7 +14,7 @@
     <h2>{{ post.title }}</h2>
     <small>By: {{ post.poster.name }} ({{ post.poster.email }})<br/>
     {{ post.date_posted }}</small><br/><br/>
-    {{ post.content }}<br/>
+    {{ post.content|safe }}<br/>
     <br/>
 </div>
 
