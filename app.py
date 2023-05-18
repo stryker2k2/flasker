@@ -90,28 +90,37 @@ def dashboard():
         name_to_update.email = request.form['email']
         name_to_update.fav_color = request.form['fav_color']
         name_to_update.username = request.form['username']
-        name_to_update.about_author = request.form['about_author']
-        name_to_update.profile_pic = request.files['profile_pic']
-        
-        # Grab Image Name
-        pic_filename = secure_filename(name_to_update.profile_pic.filename)
-        # Set UUID
-        pic_name = str(uuid.uuid1()) + "_" + pic_filename
-        # Save Profile Pic
-        saver = request.files['profile_pic']
-        
-        # Override profile_pic to be just a String in Database
-        name_to_update.profile_pic = pic_name
+        name_to_update.about_author = request.form['about_author']        
 
-        try:
+        # Check for pre-existing profile pic
+        if request.files['profile_pic']:
+            name_to_update.profile_pic = request.files['profile_pic']
+        
+            # Grab Image Name
+            pic_filename = secure_filename(name_to_update.profile_pic.filename)
+            # Set UUID
+            pic_name = str(uuid.uuid1()) + "_" + pic_filename
+            # Save Profile Pic
+            saver = request.files['profile_pic']
+            
+            # Override profile_pic to be just a String in Database
+            name_to_update.profile_pic = pic_name
+
+            try:
+                db.session.commit()
+                saver.save(os.path.join(app.config['UPLOAD_FOLDER'], pic_name))
+                flash("User Updated Successfully")
+                return render_template('dashboard.html',
+                    form = form,
+                    name_to_update = name_to_update)
+            except:
+                flash("Database Error!")
+                return render_template('dashboard.html',
+                    form = form,
+                    name_to_update = name_to_update)
+        else:
             db.session.commit()
-            saver.save(os.path.join(app.config['UPLOAD_FOLDER']), pic_name)
             flash("User Updated Successfully")
-            return render_template('dashboard.html',
-                form = form,
-                name_to_update = name_to_update)
-        except:
-            flash("Database Error!")
             return render_template('dashboard.html',
                 form = form,
                 name_to_update = name_to_update)
