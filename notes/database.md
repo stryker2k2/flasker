@@ -49,7 +49,8 @@ mysql> quit;
 # Login as MySQL User and Show Data
 ### http://g2pc1.bu.edu/~qzpeng/manual/MySQL%20Commands.htm
 (virt)$ mysql -u db-user -p
-mysql> SHOW DATABSES;
+(passwd) password
+mysql> SHOW DATABASES;
 mysql> USE our_users;
 mysql> SHOW TABLES;
 mysql> SELECT * FROM users;

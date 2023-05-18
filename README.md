@@ -27,13 +27,18 @@ https://youtu.be/0Qxtt4veJIc
 - flask run
 
 ### Daily Use
-- source virt/bin/activate
-- export FLASK_DEBUG=True
-- export FLASK_APP=hello.py
-- flask run
+- *OLD* source virt/bin/activate
+- *OLD* flask run --debug
+- *NEW* make run
 
 ### Other Commands
 - echo $FLASK_ENV
 - unset FLASK_ENV
 - flask shell
 - grip (view README.md locally)
+
+### TODO
+- Deploy to Production
+    - https://flask.palletsprojects.com/en/2.3.x/tutorial/deploy/
+- Deploy to Heroku
+    - https://youtu.be/SiCAIRc0pEI

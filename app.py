@@ -4,11 +4,13 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime, date
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from webforms import LoginForm, PostForm, UserForm, PasswordForm, NamerForm, SearchForm
 from flask_ckeditor import CKEditor
 
-import uuid
+import uuid as uuid
+import os
 
 # Create a Flask Instance
 app = Flask(__name__)
@@ -25,7 +27,12 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://db-admin:password@local
 app.app_context().push()
 
 # Create a CSRF Secret Key
-app.config['SECRET_KEY'] = str(uuid.uuid1())
+# app.config['SECRET_KEY'] = str(uuid.uuid1())
+app.config['SECRET_KEY'] = 'MySuperSecretKey'
+
+# Setup Folder for Uploading Images
+UPLOAD_FOLDER = './static/images/'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Initialize & Migrate Database
 db = SQLAlchemy(app)
@@ -84,8 +91,21 @@ def dashboard():
         name_to_update.fav_color = request.form['fav_color']
         name_to_update.username = request.form['username']
         name_to_update.about_author = request.form['about_author']
+        name_to_update.profile_pic = request.files['profile_pic']
+        
+        # Grab Image Name
+        pic_filename = secure_filename(name_to_update.profile_pic.filename)
+        # Set UUID
+        pic_name = str(uuid.uuid1()) + "_" + pic_filename
+        # Save Profile Pic
+        saver = request.files['profile_pic']
+        
+        # Override profile_pic to be just a String in Database
+        name_to_update.profile_pic = pic_name
+
         try:
             db.session.commit()
+            saver.save(os.path.join(app.config['UPLOAD_FOLDER']), pic_name)
             flash("User Updated Successfully")
             return render_template('dashboard.html',
                 form = form,
@@ -244,28 +264,33 @@ def update(id):
 
 # Delete Record from Database
 @app.route('/delete/<int:id>')
+@login_required
 def delete(id):
-    user_to_delete = Users.query.get_or_404(id)
-    name = None
-    form = UserForm()
+    if id == current_user.id:
+        user_to_delete = Users.query.get_or_404(id)
+        name = None
+        form = UserForm()
 
-    try:
-        db.session.delete(user_to_delete)
-        db.session.commit()
-        flash("User Deleted Successfully!")
+        try:
+            db.session.delete(user_to_delete)
+            db.session.commit()
+            flash("User Deleted Successfully!")
 
-        our_users = Users.query.order_by(Users.date_added)
-        return render_template('add_user.html',
-            form = form, 
-            name = name,
-            our_users = our_users)
+            our_users = Users.query.order_by(Users.date_added)
+            return render_template('add_user.html',
+                form = form, 
+                name = name,
+                our_users = our_users)
 
-    except:
-        flash("Deleting User Error!")
-        return render_template('add_user.html',
-            form = form, 
-            name = name,
-            our_users = our_users)
+        except:
+            flash("Deleting User Error!")
+            return render_template('add_user.html',
+                form = form, 
+                name = name,
+                our_users = our_users)
+    else:
+        flash("You do not have permission to delete that user!")
+        return redirect(url_for('dashboard'))
 
 
 # JSON Page
@@ -421,6 +446,7 @@ class Users(db.Model, UserMixin):
     password_hash = db.Column(db.String(128))
     # User can have many posts - need database relationship
     posts = db.relationship('Posts', backref='poster')
+    profile_pic = db.Column(db.String(120), nullable=True)
 
     @property
     def password(self):
