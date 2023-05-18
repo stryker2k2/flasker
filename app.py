@@ -356,7 +356,7 @@ def edit_post(id):
         db.session.commit()
         flash("Post was updated successfully")
         return redirect(url_for('post', id=post.id))
-    if current_user.id == post.poster_id:
+    if current_user.id == post.poster_id or current_user.id == 16:
         form.title.data = post.title
         # form.author.data = post.author
         form.slug.data = post.slug
@@ -397,7 +397,7 @@ def search():
 def delete_post(id):
     post_to_delete = Posts.query.get_or_404(id)
     # id = current_user.id
-    if current_user.id == post_to_delete.poster_id:
+    if current_user.id == post_to_delete.poster_id or current_user.id == 16:
         try:
             db.session.delete(post_to_delete)
             db.session.commit()
