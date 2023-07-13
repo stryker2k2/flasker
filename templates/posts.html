@@ -16,7 +16,7 @@
         <h2><a href=" {{ url_for('post', id=post.id) }} ">{{ post.title }}</a></h2>
         <small>By: {{ post.poster.name }} ({{ post.poster.email }})<br/>
         {{ post.date_posted }}</small><br/><br/>
-        {{ post.content|safe }}<br/>
+        {{ post.content|safe|truncate(1000) }}<br/>
 
 <div class="card mb-3">
     <div class="row no-gutters">
@@ -34,7 +34,7 @@
                 </h5>
                 <p class="card-text">
                     {% if post.poster.about_author %}
-                        {{ post.poster.about_author }}<br/>
+                        {{ post.poster.about_author|safe|truncate(500) }}<br/>
                     {% else %}
                         The Poster has not yet submitted an 'About Author' section<br/>
                     {% endif %}
@@ -47,7 +47,7 @@
         
         <br/>
         <a href=" {{ url_for('post', id=post.id) }} " class="btn btn-outline-secondary btn-sm">View Post</a>
-        {% if post.poster_id == current_user.id or current_user.id == 16 %}
+        {% if post.poster_id == current_user.id or current_user.id == admin_id %}
         <a href=" {{ url_for('edit_post', id=post.id) }} " class="btn btn-outline-secondary btn-sm">Edit Post</a>
         <a href=" {{ url_for('delete_post', id=post.id )}} " class="btn btn-outline-danger btn-sm">Delete Post</a>
         {% endif %}

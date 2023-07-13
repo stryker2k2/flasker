@@ -8,7 +8,7 @@
     </div>
 {% endfor %}
 
-{% if id == current_user.id %}
+{% if current_user.id == id or current_user.id == admin_id %}
 
 <h1>Update User:</h1>
 <br/>

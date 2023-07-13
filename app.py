@@ -34,6 +34,8 @@ app.config['SECRET_KEY'] = 'MySuperSecretKey'
 UPLOAD_FOLDER = './static/images/'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+app.config['ADMIN_ID'] = 16
+
 # Initialize & Migrate Database
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -47,18 +49,17 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return Users.query.get(int(user_id))
 
+@app.context_processor
+def set_global_html_variable_values():
+    admin_id = app.config['ADMIN_ID']
+    template_config = {'admin_id': admin_id}
+    return template_config
+
 ## Routes ##
 # Root Route
 @app.route('/')
 def index():
-    first_name = 'John'
-    bold_stuff = 'This is <strong>BOLD</strong> Text'
-    lower_stuff = 'this is bold text'
-    fav_pizza = ['Pepperoni', 'Cheese', 'Mushroom', 41]
-    return render_template('index.html', 
-        user_name = first_name,
-        stuff = bold_stuff,
-        fav_pizza = fav_pizza)
+    return redirect(url_for('posts'))
 
 # Login Page Route
 @app.route('/login', methods=['GET', 'POST'])
@@ -136,8 +137,10 @@ def dashboard():
 @login_required
 def admin():
     id = current_user.id
-    if id == 16:
-        return render_template('admin.html')
+    if id == app.config['ADMIN_ID']:
+        our_users = Users.query.order_by(Users.date_added)
+        return render_template('admin.html', 
+                               our_users = our_users)
     else:
         flash('You must be an administrator to access this page')
         return redirect(url_for('dashboard'))
@@ -154,38 +157,18 @@ def logout():
 # Blog Home Page
 @app.route('/posts')
 def posts():
-    # Grab all posts from database
-    posts = Posts.query.order_by(Posts.date_posted)
+    # Grab all posts from database 
+    # newest first = order_by(Posts.date_posted.desc())
+    # oldest first = order_by(Posts.date_posted)
+    posts = Posts.query.order_by(Posts.date_posted.desc())
     return render_template('posts.html', posts = posts)
-
-
-# localhost:5000/user/john
-@app.route('/user/<name>')
-def user(name):
-    return render_template('user.html', 
-        user_name = name)
-    
-
-# Name Page
-@app.route('/name', methods=['GET', 'POST'])
-def name():
-    name = None
-    form = NamerForm()
-    # Validate Form
-    # https://flask-wtf.readthedocs.io/en/0.15.x/form/
-    if form.validate_on_submit():
-        name = form.name.data
-        form.name.data = ''
-        flash('Form Submitted Successfully!')
-    return render_template('name.html', 
-        name = name, 
-        form = form)
 
 
 # Add User Page
 @app.route('/user/add', methods=['GET', 'POST'])
 def add_user():
     name = None
+    email = None
     form = UserForm()
     # Validate Form
     # https://flask-wtf.readthedocs.io/en/0.15.x/form/
@@ -202,80 +185,87 @@ def add_user():
             db.session.add(user)
             db.session.commit()
         name = form.name.data
+        email = form.email.data
         form.name.data = ''
         form.username.data = ''
         form.email.data = ''
         form.fav_color.data = ''
         form.password_hash.data = ''
         flash('User Added Successfully!')
-    our_users = Users.query.order_by(Users.date_added)
+    this_user = Users.query.filter_by(email=email).first()
     return render_template('add_user.html',
         form = form, 
         name = name,
-        our_users = our_users)
+        this_user = this_user)
 
 
 # Password Test Page
-@app.route('/test_pw', methods=['GET', 'POST'])
-def test_pw():
-    email = None
-    password = None
-    pw_to_check = None
-    passed = None
-    form = PasswordForm()
-    # Validate Form
-    # https://flask-wtf.readthedocs.io/en/0.15.x/form/
-    if form.validate_on_submit():
-        email = form.email.data
-        password = form.password_hash.data
-        form.email.data = ''
-        form.password_hash.data = ''
-        # Lookup user by email address
-        pw_to_check = Users.query.filter_by(email=email).first()
-        # Check Hashed Password
-        passed = check_password_hash(pw_to_check.password_hash, password)
-    return render_template('test_pw.html',
-        email = email,
-        password = password,
-        pw_to_check = pw_to_check,
-        passed = passed,
-        form = form)
+# @app.route('/test_pw', methods=['GET', 'POST'])
+# def test_pw():
+#     email = None
+#     password = None
+#     pw_to_check = None
+#     passed = None
+#     form = PasswordForm()
+#     # Validate Form
+#     # https://flask-wtf.readthedocs.io/en/0.15.x/form/
+#     if form.validate_on_submit():
+#         email = form.email.data
+#         password = form.password_hash.data
+#         form.email.data = ''
+#         form.password_hash.data = ''
+#         # Lookup user by email address
+#         pw_to_check = Users.query.filter_by(email=email).first()
+#         # Check Hashed Password
+#         passed = check_password_hash(pw_to_check.password_hash, password)
+#     return render_template('test_pw.html',
+#         email = email,
+#         password = password,
+#         pw_to_check = pw_to_check,
+#         passed = passed,
+#         form = form)
 
 
 # Update Database Record
 @app.route('/update/<int:id>', methods=['GET', 'POST'])
 @login_required
 def update(id):
-    form = UserForm()
-    name_to_update = Users.query.get_or_404(id)
-    if request.method == 'POST':
-        name_to_update.name = request.form['name']
-        name_to_update.email = request.form['email']
-        name_to_update.fav_color = request.form['fav_color']
-        name_to_update.username = request.form['username']
-        try:
-            db.session.commit()
-            flash("User Updated Successfully")
+    if current_user.id == id or current_user.id == app.config['ADMIN_ID']:
+        form = UserForm()
+        name_to_update = Users.query.get_or_404(id)
+        if request.method == 'POST':
+            name_to_update.name = request.form['name']
+            name_to_update.email = request.form['email']
+            name_to_update.fav_color = request.form['fav_color']
+            name_to_update.username = request.form['username']
+            try:
+                db.session.commit()
+                flash("User Updated Successfully")
+                return render_template('update.html',
+                    form = form,
+                    name_to_update = name_to_update,
+                    id = id)
+            except:
+                flash("Database Error!")
+                return render_template('update.html',
+                    form = form,
+                    name_to_update = name_to_update,
+                    id = id)
+        else:
             return render_template('update.html',
-                form = form,
-                name_to_update = name_to_update)
-        except:
-            flash("Database Error!")
-            return render_template('update.html',
-                form = form,
-                name_to_update = name_to_update)
+                    form = form,
+                    name_to_update = name_to_update,
+                    id = id)
     else:
-        return render_template('update.html',
-                form = form,
-                name_to_update = name_to_update,
-                id = id)
+        flash("You do not have permission to update this user!")
+        return redirect(url_for('dashboard'))
 
 
 # Delete Record from Database
 @app.route('/delete/<int:id>')
 @login_required
 def delete(id):
-    if id == current_user.id:
+    if current_user.id == id or current_user.id == app.config['ADMIN_ID']:
         user_to_delete = Users.query.get_or_404(id)
         name = None
         form = UserForm()
@@ -310,7 +300,7 @@ def get_current_date():
 
 # Post Page
 @app.route('/add-post', methods=['GET', 'POST'])
-# @login_required
+@login_required
 def add_post():
     form = PostForm()
     if form.validate_on_submit():
@@ -356,7 +346,7 @@ def edit_post(id):
         db.session.commit()
         flash("Post was updated successfully")
         return redirect(url_for('post', id=post.id))
-    if current_user.id == post.poster_id or current_user.id == 16:
+    if current_user.id == post.poster_id or current_user.id == app.config['ADMIN_ID']:
         form.title.data = post.title
         # form.author.data = post.author
         form.slug.data = post.slug
@@ -397,7 +387,7 @@ def search():
 def delete_post(id):
     post_to_delete = Posts.query.get_or_404(id)
     # id = current_user.id
-    if current_user.id == post_to_delete.poster_id or current_user.id == 16:
+    if current_user.id == post_to_delete.poster_id or current_user.id == app.config['ADMIN_ID']:
         try:
             db.session.delete(post_to_delete)
             db.session.commit()
